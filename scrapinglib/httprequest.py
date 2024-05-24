@@ -165,8 +165,13 @@ def get_html_by_form(url, form_select: str = None, fields: dict = None, cookies:
 
 
 def get_html_by_scraper(url: str = None, cookies: dict = None, ua: str = None, return_type: str = None,
-                        encoding: str = None, retry: int = 3, proxies=None, timeout: int = G_DEFAULT_TIMEOUT, verify=None):
+                        encoding: str = None, retry: int = 3, proxies=None, extra_headers: dict = None, timeout: int = G_DEFAULT_TIMEOUT, verify=None):
+
     session = create_scraper(browser={'custom': ua or G_USER_AGENT, })
+    headers = {"User-Agent": ua or G_USER_AGENT}
+    if extra_headers != None:
+        headers.update(extra_headers)
+    session.headers.update(headers)
     if isinstance(cookies, dict) and len(cookies):
         requests.utils.add_dict_to_cookiejar(session.cookies, cookies)
     if retry > 0:

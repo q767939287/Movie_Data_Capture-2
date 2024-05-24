@@ -867,7 +867,7 @@ def move_subtitles(filepath, path, multi_part, number, part, leak_word, c_word, 
     return result
 
 
-def core_main(movie_path, number_th, oCC, specified_source=None, specified_url=None):
+def core_main(movie_path, number_th, oCC, specified_source: typing.List[str] = [], specified_url=None):
     conf = config.getInstance()
     # =======================================================================初始化所需变量
     multi_part = False

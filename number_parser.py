@@ -93,7 +93,11 @@ def get_number(debug: bool, file_path: str) -> str:
                                str(re.search(r'([^<>/\\\\|:""\\*\\?]+)\\.\\w+$', filepath).group()))).strip(
                     "['']").replace('_', '-')
             except:
-                return str(re.search(r'(.+?)\.', filepath)[0])
+                anim_number = re.search(r'(.+?)\.', filepath)[0]
+                anim_number = str(anim_number)
+                if anim_number.endswith("."):
+                    anim_number =  anim_number[:-1]
+                return anim_number
     except Exception as e:
         if debug:
             print(f'[-]Number Parser exception: {e} [{file_path}]')

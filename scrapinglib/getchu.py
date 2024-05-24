@@ -3,43 +3,23 @@
 import re
 import json
 from urllib.parse import quote
-
+from lxml import etree
 from scrapinglib import httprequest
 from .parser import Parser
 
 
-class Getchu():
+class Getchu(Parser):
     source = 'getchu'
 
-    def scrape(self, number, core: None):
-        dl = dlGetchu()
-        www = wwwGetchu()
-        number = number.replace("-C", "")
-        dic = {}
-        if "item" in number:
-            sort = ["dl.scrape(number, core)", "www.scrape(number, core)"]
-        else:
-            sort = ["www.scrape(number, core)", "dl.scrape(number, core)"]
-        for i in sort:
-            try:
-                dic = eval(i)
-                if dic != None and json.loads(dic).get('title') != '':
-                    break
-            except:
-                pass
-        return dic
-
-
-class wwwGetchu(Parser):
     expr_title = '//*[@id="soft-title"]/text()'
-    expr_cover = '//head/meta[@property="og:image"]/@content'
+    # expr_cover = '//head/meta[@property="og:image"]/@content'
     expr_director = "//td[contains(text(),'ブランド')]/following-sibling::td/a[1]/text()"
     expr_studio = "//td[contains(text(),'ブランド')]/following-sibling::td/a[1]/text()"
     expr_actor = "//td[contains(text(),'ブランド')]/following-sibling::td/a[1]/text()"
     expr_label = "//td[contains(text(),'ジャンル：')]/following-sibling::td/text()"
     expr_release = "//td[contains(text(),'発売日：')]/following-sibling::td/a/text()"
     expr_tags = "//td[contains(text(),'カテゴリ')]/following-sibling::td/a/text()"
-    expr_outline = "//div[contains(text(),'商品紹介')]/following-sibling::div/text()"
+    expr_outline = "//div[contains(text(),'ストーリー')]/following-sibling::div/text()"
     expr_extrafanart = "//div[contains(text(),'サンプル画像')]/following-sibling::div/a/@href"
     expr_series = "//td[contains(text(),'ジャンル：')]/following-sibling::td/text()"
 
@@ -47,30 +27,33 @@ class wwwGetchu(Parser):
         self.imagecut = 0
         self.allow_number_change = True
 
-        self.cookies = {'getchu_adalt_flag': 'getchu.com', "adult_check_flag": "1"}
-        self.GETCHU_WWW_SEARCH_URL = 'http://www.getchu.com/php/search.phtml?genre=anime_dvd&search_keyword=_WORD_&check_key_dtl=1&submit='
+        self.cookies = {
+            'getchu_adalt_flag': 'getchu.com',
+            "adult_check_flag": "1"
+        }
+        self.extraheader = {
+            'host': "www.getchu.com",
+            'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36",
+            'referer': "http://www.getchu.com/php/search_top.phtml?em=1",
+        }
+        self.GETCHU_WWW_SEARCH_URL = 'http://www.getchu.com/php/search.phtml?genre=anime_dvd&search_keyword={keyword}&check_key_dtl=1&submit='
+        self.GETCHU_COVER_URL = 'http://www.getchu.com/brandnew/{id}/rc{id}package.jpg'
+        self.GETCHU_DETAIL_URL = 'http://www.getchu.com/soft.phtml?id={id}'
 
     def queryNumberUrl(self, number):
-        if 'GETCHU' in number.upper():
-            idn = re.findall(r'\d+', number)[0]
-            return "http://www.getchu.com/soft.phtml?id=" + idn
+        if "item" in number or 'GETCHU' in number.upper():
+            self.number = re.findall(r'\d+', number)[0]
         else:
-            queryUrl = self.GETCHU_WWW_SEARCH_URL.replace("_WORD_", quote(number, encoding="euc_jp"))
-        # NOTE dont know why will try 2 times
-        retry = 2
-        for i in range(retry):
-            queryTree = self.getHtmlTree(queryUrl)
-            detailurl = self.getTreeElement(queryTree, '//*[@id="detail_block"]/div/table/tr[1]/td/a[1]/@href')
-            if detailurl:
-                break
-        if detailurl == "":
-            return None
-        return detailurl.replace('../', 'http://www.getchu.com/')
+            queryUrl = self.GETCHU_WWW_SEARCH_URL.format(keyword=quote(number, encoding="euc_jp"))
+            htmlTree = self.getHtmlTree(queryUrl)
+            queryUrl = self.getTreeElement(htmlTree, '//a[@class="blueb"]/@href')
+            self.number = re.findall(r'\d+', queryUrl)[0]
+        return self.GETCHU_DETAIL_URL.format(id=self.number)
 
     def getHtml(self, url, type=None):
         """ 访问网页(指定EUC-JP)
         """
-        resp = httprequest.get(url, cookies=self.cookies, proxies=self.proxies, extra_headers=self.extraheader, encoding='euc_jis_2004', verify=self.verify, return_type=type)
+        resp = httprequest.get_html_by_scraper(url, cookies=self.cookies, proxies=self.proxies, extra_headers=self.extraheader, encoding='euc_jis_2004', verify=self.verify, return_type=type)
         if '<title>404 Page Not Found' in resp \
                 or '<title>未找到页面' in resp \
                 or '404 Not Found' in resp \
@@ -80,7 +63,7 @@ class wwwGetchu(Parser):
         return resp
 
     def getNum(self, htmltree):
-        return 'GETCHU-' + re.findall(r'\d+', self.detailurl.replace("http://www.getchu.com/soft.phtml?id=", ""))[0]
+        return 'GETCHU-' + re.findall(r'\d+', self.number)[0]
 
     def getActors(self, htmltree):
         return super().getDirector(htmltree)
@@ -93,10 +76,8 @@ class wwwGetchu(Parser):
         return outline
 
     def getCover(self, htmltree):
-        url = super().getCover(htmltree)
-        if "getchu.com" in url:
-            return url
-        return "http://www.getchu.com" + url
+        cover = self.GETCHU_COVER_URL.format(id=self.number)
+        return cover
 
     def getExtrafanart(self, htmltree):
         arts = super().getExtrafanart(htmltree)
@@ -116,61 +97,5 @@ class wwwGetchu(Parser):
     def getTags(self, htmltree):
         tags = super().getTags(htmltree)
         tags.append("Getchu")
-        return tags
-
-
-class dlGetchu(wwwGetchu):
-    """ 二者基本一致
-    headers extrafanart 略有区别
-    """
-    expr_title = "//div[contains(@style,'color: #333333; padding: 3px 0px 0px 5px;')]/text()"
-    expr_director = "//td[contains(text(),'作者')]/following-sibling::td/text()"
-    expr_studio = "//td[contains(text(),'サークル')]/following-sibling::td/a/text()"
-    expr_label = "//td[contains(text(),'サークル')]/following-sibling::td/a/text()"
-    expr_runtime = "//td[contains(text(),'画像数&ページ数')]/following-sibling::td/text()"
-    expr_release = "//td[contains(text(),'配信開始日')]/following-sibling::td/text()"
-    expr_tags = "//td[contains(text(),'趣向')]/following-sibling::td/a/text()"
-    expr_outline = "//*[contains(text(),'作品内容')]/following-sibling::td/text()"
-    expr_extrafanart = "//td[contains(@style,'background-color: #444444;')]/a/@href"
-    expr_series = "//td[contains(text(),'サークル')]/following-sibling::td/a/text()"
-
-    def extraInit(self):
-        self.imagecut = 4
-        self.allow_number_change = True
-
-        self.cookies = {"adult_check_flag": "1"}
-        self.extraheader = {"Referer": "https://dl.getchu.com/"}
-
-        self.GETCHU_DL_SEARCH_URL = 'https://dl.getchu.com/search/search_list.php?dojin=1&search_category_id=&search_keyword=_WORD_&btnWordSearch=%B8%A1%BA%F7&action=search&set_category_flag=1'
-        self.GETCHU_DL_URL = 'https://dl.getchu.com/i/item_WORD_'
-
-    def queryNumberUrl(self, number):
-        if "item" in number or 'GETCHU' in number.upper():
-            self.number = re.findall(r'\d+', number)[0]
-        else:
-            queryUrl = self.GETCHU_DL_SEARCH_URL.replace("_WORD_", quote(number, encoding="euc_jp"))
-            queryTree = self.getHtmlTree(queryUrl)
-            detailurl = self.getTreeElement(queryTree, '/html/body/div[1]/table/tr/td/table[4]/tr/td[2]/table/tr[2]/td/table/tr/td/table/tr/td[2]/div/a[1]/@href')
-            if detailurl == "":
-                return None
-            self.number = re.findall(r'\d+', detailurl)[0]
-        return self.GETCHU_DL_URL.replace("_WORD_", self.number)
-
-    def getNum(self, htmltree):
-        return 'GETCHU-' + re.findall(r'\d+', self.number)[0]
-
-    def extradict(self, dic: dict):
-        return dic
-
-    def getExtrafanart(self, htmltree):
-        arts = self.getTreeAll(htmltree, self.expr_extrafanart)
-        extrafanart = []
-        for i in arts:
-            i = "https://dl.getchu.com" + i
-            extrafanart.append(i)
-        return extrafanart
-
-    def getTags(self, htmltree):
-        tags = super().getTags(htmltree)
-        tags.append("Getchu")
+        tags.append("Animation")
         return tags

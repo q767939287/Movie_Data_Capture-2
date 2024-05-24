@@ -2,6 +2,7 @@
 
 import re
 import json
+import typing
 from .parser import Parser
 import config
 import importlib
@@ -18,7 +19,7 @@ def search(number, sources: str = None, **kwargs):
     return sc.search(number, sources, **kwargs)
 
 
-def getSupportedSources(tag='adult'):
+def getSupportedSources(tag='adult') -> typing.List[str]:
     """
     :param tag: `adult`, `general`
     """
@@ -34,7 +35,7 @@ class Scraping:
     """
     adult_full_sources = ['javlibrary', 'javdb', 'javbus', 'airav', 'fanza', 'xcity', 'jav321',
                           'mgstage', 'fc2', 'avsox', 'dlsite', 'carib', 'madou', 'msin',
-                          'getchu', 'gcolle', 'javday', 'pissplay', 'javmenu', 'pcolle', 'caribpr'
+                          'getchu', 'getchu_dl', 'gcolle', 'javday', 'pissplay', 'javmenu', 'pcolle', 'caribpr'
                           ]
 
     general_full_sources = ['tmdb', 'imdb']
@@ -43,7 +44,7 @@ class Scraping:
 
     proxies = None
     verify = None
-    specifiedSource = None
+    specifiedSource = []
     specifiedUrl = None
 
     dbcookies = None
@@ -51,8 +52,8 @@ class Scraping:
     # 使用storyline方法进一步获取故事情节
     morestoryline = False
 
-    def search(self, number, sources=None, proxies=None, verify=None, type='adult',
-               specifiedSource=None, specifiedUrl=None,
+    def search(self, number, sources: typing.List[str] = [], proxies=None, verify=None, type='adult',
+               specifiedSource: typing.List[str] = [], specifiedUrl=None,
                dbcookies=None, dbsite=None, morestoryline=False,
                debug=False):
         self.debug = debug
@@ -68,12 +69,12 @@ class Scraping:
         else:
             return self.searchGeneral(number, sources)
 
-    def searchGeneral(self, name, sources):
+    def searchGeneral(self, name, sources: typing.List[str]):
         """ 查询电影电视剧
         imdb,tmdb
         """
         if self.specifiedSource:
-            sources = [self.specifiedSource]
+            sources = self.specifiedSource
         else:
             sources = self.checkGeneralSources(sources, name)
         json_data = {}
@@ -114,11 +115,9 @@ class Scraping:
 
         return json_data
 
-    def searchAdult(self, number, sources):
-        if self.specifiedSource:
-            sources = [self.specifiedSource]
-        elif type(sources) is list:
-            pass
+    def searchAdult(self, number, sources: typing.List[str]):
+        if self.specifiedSource and len(self.specifiedSource) > 0:
+            sources = self.specifiedSource
         else:
             sources = self.checkAdultSources(sources, number)
         json_data = {}
@@ -174,28 +173,28 @@ class Scraping:
 
         return json_data
 
-    def checkGeneralSources(self, c_sources, name):
-        if not c_sources:
+    def checkGeneralSources(self, c_sources: typing.List[str], name) -> typing.List[str]:
+        if len(c_sources) == 0:
             sources = self.general_full_sources
         else:
-            sources = c_sources.split(',')
+            sources = c_sources
 
         # check sources in func_mapping
-        todel = []
+        delete_list: typing.List[str] = []
         for s in sources:
             if not s in self.general_full_sources:
                 print('[!] Source Not Exist : ' + s)
-                todel.append(s)
-        for d in todel:
+                delete_list.append(s)
+        for d in delete_list:
             print('[!] Remove Source : ' + s)
             sources.remove(d)
         return sources
 
-    def checkAdultSources(self, c_sources, file_number):
-        if not c_sources:
+    def checkAdultSources(self, c_sources: typing.List[str], file_number) -> typing.List[str]:
+        if len(c_sources) == 0:
             sources = self.adult_full_sources
         else:
-            sources = c_sources.split(',')
+            sources = c_sources
 
         def insert(sources, source):
             if source in sources:
@@ -210,11 +209,12 @@ class Scraping:
                 sources = insert(sources, "caribpr")
                 sources = insert(sources, "carib")
             elif "item" in file_number or "GETCHU" in file_number.upper():
-                sources = ["getchu"]
+                sources = ["getchu", "getchu_dl"]
             elif "rj" in lo_file_number or "vj" in lo_file_number:
                 sources = ["dlsite"]
-            elif re.search(r"[\u3040-\u309F\u30A0-\u30FF]+", file_number):
-                sources = ["dlsite", "getchu"]
+            elif re.search(r"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+", file_number) or "animation" in lo_file_number:
+                sources = config.getInstance().anim_sources()
+                print('[*] Anime name detected : ' + file_number)
             elif "pcolle" in sources and "pcolle" in lo_file_number:
                 sources = ["pcolle"]
             elif "fc2" in lo_file_number:
@@ -222,7 +222,7 @@ class Scraping:
             elif (re.search(r"\d+\D+-", file_number) or "siro" in lo_file_number):
                 if "mgstage" in sources:
                     sources = insert(sources, "mgstage")
-            elif "gcolle" in sources and (re.search("\d{6}", file_number)):
+            elif "gcolle" in sources and (re.search(r"\d{6}", file_number)):
                 sources = insert(sources, "gcolle")
             elif re.search(r"^\d{5,}", file_number) or \
                     (re.search(r"^\d{6}-\d{3}", file_number)) or "heyzo" in lo_file_number:
@@ -234,12 +234,14 @@ class Scraping:
                     sources = insert(sources, "madou")
 
         # check sources in func_mapping
-        todel = []
+        # print(sources)
+        delete_list: typing.List[str] = []
         for s in sources:
-            if not s in self.adult_full_sources and config.getInstance().debug():
-                print('[!] Source Not Exist : ' + s)
-                todel.append(s)
-        for d in todel:
+            if not s in self.adult_full_sources :
+                if config.getInstance().debug():
+                    print('[!] Source Not Exist : ' + s)
+                delete_list.append(s)
+        for d in delete_list:
             if config.getInstance().debug():
                 print('[!] Remove Source : ' + d)
             sources.remove(d)

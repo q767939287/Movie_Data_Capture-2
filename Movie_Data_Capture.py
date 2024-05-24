@@ -80,7 +80,7 @@ def argparse_function(ver: str) -> typing.Tuple[str, str, str, str, bool, bool, 
 is performed. It may help you correct wrong numbers before real job.""")
     parser.add_argument("-v", "--version", action="version", version=ver)
     parser.add_argument("-s", "--search", default='', nargs='?', help="Search number")
-    parser.add_argument("-ss", "--specified-source", default='', nargs='?', help="specified Source.")
+    parser.add_argument("-ss", "--specified-source-str", default='', nargs='?', help="specified Source.")
     parser.add_argument("-su", "--specified-url", default='', nargs='?', help="specified Url.")
 
     args = parser.parse_args()
@@ -119,7 +119,7 @@ is performed. It may help you correct wrong numbers before real job.""")
         if no_net_op:
             conf.set_override("advenced_sleep:stop_counter=0;advenced_sleep:rerun_delay=0s;face:aways_imagecut=1")
 
-    return args.file, args.number, args.logdir, args.regexstr, args.zero_op, no_net_op, args.search, args.specified_source, args.specified_url
+    return args.file, args.number, args.logdir, args.regexstr, args.zero_op, no_net_op, args.search, args.specified_source_str, args.specified_url
 
 
 class OutLogger(object):
@@ -490,7 +490,7 @@ def create_data_and_move(movie_path: str, zero_op: bool, no_net_op: bool, oCC, t
     thread_list.remove(threading.current_thread().name)
 
 
-def create_data_and_move_with_custom_number(file_path: str, custom_number, oCC, specified_source, specified_url):
+def create_data_and_move_with_custom_number(file_path: str, custom_number, oCC, specified_source: typing.List[str], specified_url):
     conf = config.getInstance()
     file_name = os.path.basename(file_path)
     try:
@@ -516,10 +516,11 @@ def create_data_and_move_with_custom_number(file_path: str, custom_number, oCC, 
 
 
 def main(args: tuple) -> Path:
-    (single_file_path, custom_number, logdir, regexstr, zero_op, no_net_op, search, specified_source,
+    (single_file_path, custom_number, logdir, regexstr, zero_op, no_net_op, search, specified_source_str,
      specified_url) = args
     conf = config.getInstance()
     main_mode = conf.main_mode()
+    specified_source = specified_source_str.split(',')
     folder_path = ""
     if main_mode not in (1, 2, 3):
         print(f"[-]Main mode must be 1 or 2 or 3! You can run '{os.path.basename(sys.argv[0])} --help' for more help.")
@@ -608,7 +609,7 @@ def main(args: tuple) -> Path:
     if not search == '':
         search_list = search.split(",")
         for i in search_list:
-            json_data = get_data_from_json(i, oCC, None, None)
+            json_data = get_data_from_json(i, oCC, [], None)
             debug_print(json_data)
             time.sleep(int(config.getInstance().sleep()))
         os._exit(0)

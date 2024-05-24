@@ -364,8 +364,16 @@ class Config:
         except ValueError:
             self._exit("update:update_check")
 
-    def sources(self) -> str:
-        return self.conf.get("priority", "website")
+    def sources(self) -> typing.List[str]:
+        return  [source.strip() for source in self.conf.get("priority", "website").split(',')]
+    
+    def anim_sources(self) -> typing.List[str]:
+        try:
+            # 去除 anim_sources 中每个元素的空格
+            anim_sources = [source.strip() for source in self.conf.get("priority", "animation").split(',')]
+            return anim_sources
+        except:
+            return ["getchu", "getchu_dl", "dlsite"]
 
     def escape_literals(self) -> str:
         return self.conf.get("escape", "literals")
@@ -504,6 +512,7 @@ class Config:
         sec6 = "priority"
         conf.add_section(sec6)
         conf.set(sec6, "website", "airav,javbus,javdb,fanza,xcity,mgstage,fc2,fc2club,avsox,jav321,xcity")
+        conf.set(sec6, "animation", "getchu,getchu_dl,dlsite")
 
         sec7 = "escape"
         conf.add_section(sec7)
@@ -649,5 +658,5 @@ if __name__ == "__main__":
     conf2.set_override("d:s=1;face:asp=2;f:aw=0;pri:w=javdb;f:l=")
     assert conf2.face_aspect_ratio() == 2
     assert conf2.face_aways_imagecut() == False
-    assert conf2.sources() == "javdb"
+    assert conf2.sources() == ["javdb"]
     print(f"Load Config file '{conf2.ini_path}'.")

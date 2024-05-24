@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from abc import abstractmethod
 import json
 import re
 from lxml import etree, html
@@ -109,14 +110,14 @@ class Parser:
         if core.specifiedSource == self.source:
             self.specifiedUrl = core.specifiedUrl
 
-    def queryNumberUrl(self, number):
+    @abstractmethod
+    def queryNumberUrl(self, number) -> str:
         """ 根据番号查询详细信息url
 
         需要针对不同站点修改,或者在上层直接获取
         备份查询页面,预览图可能需要
         """
-        url = "http://detailurl.ai/" + number
-        return url
+        pass
 
     def getHtml(self, url, type=None):
         """ 访问网页
@@ -145,10 +146,10 @@ class Parser:
     def getHtmlTree(self, url, type=None):
         """ 访问网页,返回`etree`
         """
-        resp = self.getHtml(url, type)
-        if resp == 404:
+        resp_text = self.getHtml(url, type)
+        if resp_text == 404:
             return 404
-        ret = etree.fromstring(resp, etree.HTMLParser())
+        ret = etree.fromstring(resp_text, etree.HTMLParser(recover=True))
         return ret
 
     def dictformat(self, htmltree):
