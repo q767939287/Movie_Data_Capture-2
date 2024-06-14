@@ -51,14 +51,15 @@ def get(url: str, cookies=None, ua: str = None, extra_headers=None, return_type:
     raise Exception('Connect Failed')
 
 
-def post(url: str, data: dict = None, files=None, cookies=None, ua: str = None, return_type: str = None, encoding: str = None,
+def post(url: str, data: dict = None, files=None, cookies=None, ua: str = None, extra_headers=None, return_type: str = None, encoding: str = None,
          retry: int = 3, timeout: int = G_DEFAULT_TIMEOUT, proxies=None, verify=None):
     """
     是否使用代理应由上层处理
     """
     errors = ""
     headers = {"User-Agent": ua or G_USER_AGENT}
-
+    if extra_headers != None:
+        headers.update(extra_headers)
     for i in range(retry):
         try:
             result = requests.post(url, data=data, files=files, headers=headers, timeout=timeout, proxies=proxies,

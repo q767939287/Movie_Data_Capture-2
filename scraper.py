@@ -120,6 +120,7 @@ def get_data_from_json(
     label = json_data.get('label')
     series = json_data.get('series')
     year = json_data.get('year')
+    headers = json_data.get('headers')
 
     if json_data.get('cover_small'):
         cover_small = json_data.get('cover_small')
@@ -186,6 +187,7 @@ def get_data_from_json(
     json_data['series'] = series
     json_data['studio'] = studio
     json_data['director'] = director
+    json_data['headers'] = headers
 
     if conf.is_translate():
         translate_values = conf.translate_values().split(",")

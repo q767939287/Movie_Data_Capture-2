@@ -79,6 +79,12 @@ class Javbus(Parser):
         result = self.dictformat(htmltree)
         return result
 
+    def extradict(self, dic: dict):
+        """ 额外新增的  headers
+        """
+        dic['headers'] = {'cookie': 'existmag=mag'}
+        return dic
+
     def getNum(self, htmltree):
         return super().getNum(htmltree).split(',')[0]
 

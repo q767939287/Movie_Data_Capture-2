@@ -20,13 +20,14 @@ from pathlib import Path
 from opencc import OpenCC
 
 from scraper import get_data_from_json
-from ADC_function import file_modification_days, get_html, parallel_download_files
+from ADC_function import file_modification_days, parallel_download_files
 from number_parser import get_number
 from core import core_main, core_main_no_net_op, moveFailedFolder, debug_print
+from scrapinglib import httprequest
 
 
 def check_update(local_version):
-    htmlcode = get_html("https://api.github.com/repos/houfukude/Movie_Data_Capture/releases/latest")
+    htmlcode = httprequest.get("https://api.github.com/repos/houfukude/Movie_Data_Capture/releases/latest")
     data = json.loads(htmlcode)
     remote = int(data["tag_name"].replace(".", ""))
     local_version = int(local_version.replace(".", ""))
