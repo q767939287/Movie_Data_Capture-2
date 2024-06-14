@@ -122,7 +122,7 @@ def getStoryline_airav(number, debug, proxies, verify):
         res = session.get(url)
         if not res:
             raise ValueError(f"get_html_by_session('{url}') failed")
-        lx = etree.fromstring(res.text.encode('utf-8'), etree.HTMLParser(recover=True))
+        lx = etree.fromstring(res.text, etree.HTMLParser(recover=True))
         urls = lx.xpath('//div[@class="oneVideo-top"]/a/@href')
         txts = lx.xpath('//div[@class="oneVideo-body"]/h5/text()')
         detail_url = None
@@ -135,7 +135,7 @@ def getStoryline_airav(number, debug, proxies, verify):
         detail_data = session.get(detail_url)
         if not detail_data.ok:
             raise ValueError(f"session.get('{detail_url}') failed")
-        detail_page = etree.fromstring(detail_data.text.encode('utf-8'), etree.HTMLParser(recover=True))
+        detail_page = etree.fromstring(detail_data.text, etree.HTMLParser(recover=True))
         titles = detail_page.xpath('//div[@class="video-title my-3"]/h1/text()')
         title = str(titles[0]).strip()
         if number not in title:
@@ -216,7 +216,7 @@ def getStoryline_avno1(number, debug, proxies, verify):  # 获取剧情介绍 �
                                'www.hdsex.cc', 'www.porn18.cc', 'www.xxx18.cc',])
         url = f'http://{site}/cn/search.php?kw_type=key&kw={number}'
         data = httprequest.get_html_by_scraper(url, proxies=proxies, verify=verify)
-        lx = etree.fromstring(data.encode('utf-8'), etree.HTMLParser(recover=True))
+        lx = etree.fromstring(data, etree.HTMLParser(recover=True))
         descs = lx.xpath('//@data-description')
         titles = lx.xpath('//a[@class="ga_name"]/text()')
         if not descs or not len(descs):
