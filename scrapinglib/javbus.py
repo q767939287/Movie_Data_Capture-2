@@ -82,7 +82,7 @@ class Javbus(Parser):
     def extradict(self, dic: dict):
         """ 额外新增的  headers
         """
-        dic['headers'] = {'cookie': 'existmag=mag'}
+        dic['headers'] = {'cookie': 'existmag=mag', "referer": self.detailurl}
         return dic
 
     def getNum(self, htmltree):
