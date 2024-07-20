@@ -210,15 +210,15 @@ class Scraping:
                 sources = insert(sources, "carib")
             elif "item" in file_number or "GETCHU" in file_number.upper():
                 sources = ["getchu", "getchu_dl"]
-            elif "rj" in lo_file_number or "vj" in lo_file_number:
-                sources = ["dlsite"]
+            #elif "rj" in lo_file_number or "vj" in lo_file_number:
+                #sources = ["dlsite"]
             elif re.search(r"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+", file_number) or "animation" in lo_file_number:
                 sources = config.getInstance().anim_sources()
                 print('[*] Anime name detected : ' + file_number)
             elif "pcolle" in sources and "pcolle" in lo_file_number:
                 sources = ["pcolle"]
-            elif "fc2" in lo_file_number:
-                sources = ["fc2", "avsox", "msin"]
+            #elif "fc2" in lo_file_number:
+                #sources = ["fc2", "avsox", "msin"]
             elif (re.search(r"\d+\D+-", file_number) or "siro" in lo_file_number):
                 if "mgstage" in sources:
                     sources = insert(sources, "mgstage")
